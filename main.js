@@ -1,374 +1,322 @@
-// ===== THREE.JS 3D BACKGROUND =====
+/* ============================================================
+   THREE.JS  —  IMMERSIVE 3D BACKGROUND
+   ============================================================ */
 (function () {
-  const canvas = document.getElementById('bg-canvas');
+  const canvas = document.getElementById('bg');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.z = 30;
+  const cam = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 1000);
+  cam.position.z = 28;
 
-  // Star field
-  const starCount = 2000;
-  const starGeometry = new THREE.BufferGeometry();
-  const starPositions = new Float32Array(starCount * 3);
-  const starColors = new Float32Array(starCount * 3);
-
-  for (let i = 0; i < starCount; i++) {
-    starPositions[i * 3] = (Math.random() - 0.5) * 200;
-    starPositions[i * 3 + 1] = (Math.random() - 0.5) * 200;
-    starPositions[i * 3 + 2] = (Math.random() - 0.5) * 200;
-
-    const colorChoice = Math.random();
-    if (colorChoice < 0.33) {
-      starColors[i * 3] = 0.23; starColors[i * 3 + 1] = 0.51; starColors[i * 3 + 2] = 1.0;
-    } else if (colorChoice < 0.66) {
-      starColors[i * 3] = 0.55; starColors[i * 3 + 1] = 0.36; starColors[i * 3 + 2] = 1.0;
-    } else {
-      starColors[i * 3] = 0.5; starColors[i * 3 + 1] = 0.9; starColors[i * 3 + 2] = 1.0;
-    }
+  /* ── Stars ── */
+  const starGeo = new THREE.BufferGeometry();
+  const N = 3000;
+  const pos = new Float32Array(N * 3);
+  const col = new Float32Array(N * 3);
+  const palettes = [[0.3, 0.56, 1], [0.6, 0.42, 1], [0.0, 0.93, 1], [0.06, 0.85, 0.56]];
+  for (let i = 0; i < N; i++) {
+    pos[i*3]   = (Math.random()-0.5)*220;
+    pos[i*3+1] = (Math.random()-0.5)*220;
+    pos[i*3+2] = (Math.random()-0.5)*220;
+    const p = palettes[Math.floor(Math.random()*palettes.length)];
+    col[i*3]=p[0]; col[i*3+1]=p[1]; col[i*3+2]=p[2];
   }
+  starGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  starGeo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
+  scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({
+    size: 0.14, vertexColors: true, transparent: true, opacity: 0.85, sizeAttenuation: true
+  })));
 
-  starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-  starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
-
-  const starMaterial = new THREE.PointsMaterial({
-    size: 0.15,
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.8,
-    sizeAttenuation: true
-  });
-
-  const stars = new THREE.Points(starGeometry, starMaterial);
-  scene.add(stars);
-
-  // Floating geometric shapes
+  /* ── Floating wireframe shapes ── */
   const shapes = [];
-  const geometries = [
-    new THREE.OctahedronGeometry(1.5),
-    new THREE.TetrahedronGeometry(1.2),
-    new THREE.IcosahedronGeometry(1.0),
-    new THREE.TorusGeometry(1, 0.3, 8, 20),
-    new THREE.TorusKnotGeometry(0.8, 0.2, 60, 8),
+  const geos = [
+    new THREE.IcosahedronGeometry(1.6, 0),
+    new THREE.OctahedronGeometry(1.4, 0),
+    new THREE.TorusGeometry(1.1, 0.35, 8, 18),
+    new THREE.TetrahedronGeometry(1.5),
+    new THREE.TorusKnotGeometry(0.9, 0.25, 60, 8),
+    new THREE.DodecahedronGeometry(1.2, 0),
   ];
-
-  const colors = [0x3b82f6, 0x8b5cf6, 0x06b6d4, 0x10b981, 0xa78bfa];
-
-  for (let i = 0; i < 12; i++) {
-    const geo = geometries[i % geometries.length];
-    const mat = new THREE.MeshBasicMaterial({
-      color: colors[i % colors.length],
-      wireframe: true,
-      transparent: true,
-      opacity: 0.15 + Math.random() * 0.1
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(
-      (Math.random() - 0.5) * 60,
-      (Math.random() - 0.5) * 40,
-      (Math.random() - 0.5) * 20 - 5
+  const clrs = [0x4f8fff, 0x9b6bff, 0x00eeff, 0x10d98e, 0xa78bfa, 0x60a5fa];
+  for (let i = 0; i < 14; i++) {
+    const m = new THREE.Mesh(
+      geos[i % geos.length],
+      new THREE.MeshBasicMaterial({ color: clrs[i%clrs.length], wireframe: true, transparent: true, opacity: 0.10 + Math.random()*0.08 })
     );
-    mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
-    const scale = 0.5 + Math.random() * 1.5;
-    mesh.scale.setScalar(scale);
-    mesh.userData = {
-      rotX: (Math.random() - 0.5) * 0.01,
-      rotY: (Math.random() - 0.5) * 0.01,
-      floatY: Math.random() * Math.PI * 2,
-      floatSpeed: 0.008 + Math.random() * 0.005,
-      originalY: mesh.position.y
+    m.position.set((Math.random()-0.5)*70, (Math.random()-0.5)*45, (Math.random()-0.5)*20 - 5);
+    const s = 0.6 + Math.random()*2;
+    m.scale.setScalar(s);
+    m.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, 0);
+    m.userData = {
+      rx: (Math.random()-0.5)*0.008,
+      ry: (Math.random()-0.5)*0.010,
+      fy: Math.random()*Math.PI*2,
+      fs: 0.006 + Math.random()*0.004,
+      oy: m.position.y
     };
-    scene.add(mesh);
-    shapes.push(mesh);
+    scene.add(m);
+    shapes.push(m);
   }
 
-  // Particle grid
-  const gridCount = 80;
+  /* ── Particle grid plane ── */
+  const gW = 90, gH = 60;
   const gridGeo = new THREE.BufferGeometry();
-  const gridPositions = new Float32Array(gridCount * gridCount * 3);
-  let idx = 0;
-  for (let x = 0; x < gridCount; x++) {
-    for (let y = 0; y < gridCount; y++) {
-      gridPositions[idx++] = (x / gridCount - 0.5) * 120;
-      gridPositions[idx++] = (y / gridCount - 0.5) * 80;
-      gridPositions[idx++] = -20;
+  const gpos = new Float32Array(gW * gH * 3);
+  let k = 0;
+  for (let x = 0; x < gW; x++)
+    for (let y = 0; y < gH; y++) {
+      gpos[k++] = (x/gW - 0.5) * 130;
+      gpos[k++] = (y/gH - 0.5) * 90;
+      gpos[k++] = -25;
     }
-  }
-  gridGeo.setAttribute('position', new THREE.BufferAttribute(gridPositions, 3));
-  const gridMat = new THREE.PointsMaterial({
-    size: 0.06,
-    color: 0x3b82f6,
-    transparent: true,
-    opacity: 0.12
-  });
-  scene.add(new THREE.Points(gridGeo, gridMat));
+  gridGeo.setAttribute('position', new THREE.BufferAttribute(gpos,3));
+  scene.add(new THREE.Points(gridGeo, new THREE.PointsMaterial({ size:0.05, color:0x4f8fff, transparent:true, opacity:0.10 })));
 
-  // Mouse tracking
-  let mouseX = 0, mouseY = 0;
-  let scrollY = 0;
+  /* ── Mouse & scroll ── */
+  let mx = 0, my = 0, sy = 0;
+  addEventListener('mousemove', e => { mx=(e.clientX/innerWidth-0.5)*2; my=-(e.clientY/innerHeight-0.5)*2; });
+  addEventListener('scroll',    () => { sy = scrollY; });
+  addEventListener('resize',    () => { cam.aspect=innerWidth/innerHeight; cam.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
 
-  window.addEventListener('mousemove', (e) => {
-    mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
-    mouseY = -(e.clientY / window.innerHeight - 0.5) * 2;
-  });
-
-  window.addEventListener('scroll', () => {
-    scrollY = window.scrollY;
-  });
-
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  });
-
-  let time = 0;
-  function animate() {
+  /* ── Animate ── */
+  const clock = new THREE.Clock();
+  (function animate() {
     requestAnimationFrame(animate);
-    time += 0.01;
+    const t = clock.getElapsedTime();
 
-    // Slowly rotate star field
-    stars.rotation.y += 0.0002;
-    stars.rotation.x += 0.00005;
+    // Stars drift
+    scene.children[0].rotation.y = t * 0.018;
+    scene.children[0].rotation.x = t * 0.006;
 
-    // Camera follows mouse subtly
-    camera.position.x += (mouseX * 3 - camera.position.x) * 0.02;
-    camera.position.y += (mouseY * 2 - camera.position.y) * 0.02;
-    camera.position.z = 30 + scrollY * 0.02;
-    camera.lookAt(scene.position);
+    // Camera parallax
+    cam.position.x += (mx * 2.5 - cam.position.x) * 0.025;
+    cam.position.y += (my * 1.8 - cam.position.y) * 0.025;
+    cam.position.z  = 28 + sy * 0.015;
+    cam.lookAt(scene.position);
 
-    // Animate shapes
-    shapes.forEach(shape => {
-      shape.rotation.x += shape.userData.rotX;
-      shape.rotation.y += shape.userData.rotY;
-      shape.userData.floatY += shape.userData.floatSpeed;
-      shape.position.y = shape.userData.originalY + Math.sin(shape.userData.floatY) * 1.5;
+    // Shapes float & spin
+    shapes.forEach(s => {
+      s.rotation.x += s.userData.rx;
+      s.rotation.y += s.userData.ry;
+      s.userData.fy += s.userData.fs;
+      s.position.y   = s.userData.oy + Math.sin(s.userData.fy) * 1.8;
     });
 
-    renderer.render(scene, camera);
-  }
-  animate();
+    renderer.render(scene, cam);
+  })();
 })();
 
-// ===== CUSTOM CURSOR =====
+/* ============================================================
+   CUSTOM CURSOR
+   ============================================================ */
 (function () {
-  const cursor = document.getElementById('cursor');
-  const follower = document.getElementById('cursor-follower');
-  let fx = 0, fy = 0;
+  const c = document.getElementById('cursor');
+  const g = document.getElementById('cursor-glow');
+  let gx = 0, gy = 0;
 
-  window.addEventListener('mousemove', (e) => {
-    cursor.style.left = e.clientX + 'px';
-    cursor.style.top = e.clientY + 'px';
-    fx += (e.clientX - fx) * 0.12;
-    fy += (e.clientY - fy) * 0.12;
-    follower.style.left = e.clientX + 'px';
-    follower.style.top = e.clientY + 'px';
-  });
-
-  document.querySelectorAll('a, button, .project-card, .skill-pill, .info-card').forEach(el => {
-    el.addEventListener('mouseenter', () => {
-      cursor.classList.add('hovered');
-      follower.classList.add('hovered');
-    });
-    el.addEventListener('mouseleave', () => {
-      cursor.classList.remove('hovered');
-      follower.classList.remove('hovered');
-    });
+  addEventListener('mousemove', e => {
+    c.style.left = e.clientX + 'px';
+    c.style.top  = e.clientY + 'px';
+    gx += (e.clientX - gx) * 0.14;
+    gy += (e.clientY - gy) * 0.14;
+    g.style.left = e.clientX + 'px';
+    g.style.top  = e.clientY + 'px';
   });
 })();
 
-// ===== NAVBAR SCROLL =====
+/* ============================================================
+   NAVBAR SCROLL + ACTIVE LINK
+   ============================================================ */
 (function () {
-  const navbar = document.getElementById('navbar');
-  const links = document.querySelectorAll('.nav-link');
+  const nav = document.getElementById('nav');
+  const links = document.querySelectorAll('#nav ul a');
 
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 80) navbar.classList.add('scrolled');
-    else navbar.classList.remove('scrolled');
+  addEventListener('scroll', () => {
+    nav.classList.toggle('stuck', scrollY > 60);
+    let cur = '';
+    document.querySelectorAll('.section, #hero').forEach(s => {
+      if (scrollY >= s.offsetTop - 140) cur = s.id;
+    });
+    links.forEach(l => l.classList.toggle('active-link', l.getAttribute('href') === '#' + cur));
+  });
+})();
 
-    // Active nav link
-    const sections = document.querySelectorAll('.section');
-    sections.forEach(section => {
-      const top = section.offsetTop - 100;
-      const bottom = top + section.offsetHeight;
-      if (window.scrollY >= top && window.scrollY < bottom) {
-        links.forEach(l => l.classList.remove('active'));
-        const active = document.querySelector(`.nav-link[href="#${section.id}"]`);
-        if (active) active.classList.add('active');
+/* ============================================================
+   REVEAL ON SCROLL  (IntersectionObserver)
+   ============================================================ */
+(function () {
+  const io = new IntersectionObserver(entries => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('in'), i * 80);
+        io.unobserve(e.target);
       }
     });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+})();
+
+/* ============================================================
+   PHOTO — 3D TILT ON MOUSE MOVE
+   ============================================================ */
+(function () {
+  const scene = document.querySelector('.photo-scene');
+  const right  = document.getElementById('heroRight');
+  if (!right) return;
+
+  right.addEventListener('mousemove', e => {
+    const r  = right.getBoundingClientRect();
+    const rx = ((e.clientY - r.top)  / r.height - 0.5) * -18;
+    const ry = ((e.clientX - r.left) / r.width  - 0.5) *  18;
+    scene.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+    scene.style.transition = 'transform 0.05s ease';
+  });
+  right.addEventListener('mouseleave', () => {
+    scene.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    scene.style.transition = 'transform 0.6s ease';
   });
 })();
 
-// ===== REVEAL ON SCROLL =====
-(function () {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry, i) => {
-      if (entry.isIntersecting) {
-        setTimeout(() => {
-          entry.target.classList.add('visible');
-        }, 100);
-      }
-    });
-  }, { threshold: 0.1 });
-
-  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-})();
-
-// ===== ROLE CAROUSEL =====
-(function () {
-  const roles = document.querySelectorAll('.role');
-  let current = 0;
-
-  setInterval(() => {
-    roles[current].classList.remove('active');
-    current = (current + 1) % roles.length;
-    roles[current].classList.add('active');
-  }, 2500);
-})();
-
-// ===== 3D TILT EFFECT ON PROJECT CARDS =====
-(function () {
-  const cards = document.querySelectorAll('[data-tilt]');
-
-  cards.forEach(card => {
-    card.addEventListener('mousemove', (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-      const rotateX = ((y - centerY) / centerY) * -8;
-      const rotateY = ((x - centerX) / centerX) * 8;
-
-      card.style.transform = `translateY(-8px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
-      card.style.transition = 'transform 0.1s ease';
-    });
-
-    card.addEventListener('mouseleave', () => {
-      card.style.transform = 'translateY(0) rotateX(0) rotateY(0) scale(1)';
-      card.style.transition = 'transform 0.4s cubic-bezier(0.23, 1, 0.32, 1)';
-    });
-  });
-})();
-
-// ===== SCROLL PARALLAX FOR HERO ORB =====
-(function () {
-  const orb = document.querySelector('.hero-orb');
-  const floatingCards = document.querySelectorAll('.floating-card');
-
-  window.addEventListener('scroll', () => {
-    const scrolled = window.scrollY;
-    if (orb) {
-      orb.style.transform = `translateY(${scrolled * 0.3}px)`;
-    }
-    floatingCards.forEach((card, i) => {
-      card.style.transform = `translateY(${scrolled * (0.1 + i * 0.05)}px)`;
-    });
-  });
-})();
-
-// ===== GLOWING MOUSE TRAIL ON HERO =====
+/* ============================================================
+   HERO MOUSE GLOW
+   ============================================================ */
 (function () {
   const hero = document.getElementById('hero');
-  let glowEl = null;
-
-  if (hero) {
-    glowEl = document.createElement('div');
-    glowEl.style.cssText = `
-      position: absolute;
-      width: 500px;
-      height: 500px;
-      border-radius: 50%;
-      pointer-events: none;
-      background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
-      transform: translate(-50%, -50%);
-      transition: left 0.3s ease, top 0.3s ease;
-      z-index: 1;
-    `;
-    hero.appendChild(glowEl);
-
-    hero.addEventListener('mousemove', (e) => {
-      const rect = hero.getBoundingClientRect();
-      glowEl.style.left = (e.clientX - rect.left) + 'px';
-      glowEl.style.top = (e.clientY - rect.top) + 'px';
-    });
-  }
-})();
-
-// ===== CONTACT FORM =====
-(function () {
-  const form = document.getElementById('contactForm');
-  if (form) {
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const btn = form.querySelector('button[type="submit"]');
-      btn.textContent = '✅ Message Sent!';
-      btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-      setTimeout(() => {
-        btn.textContent = 'Send Message ✉️';
-        btn.style.background = '';
-        form.reset();
-      }, 3000);
-    });
-  }
-})();
-
-// ===== SKILL PILL STAGGER ANIMATION =====
-(function () {
-  const pills = document.querySelectorAll('.skill-pill');
-  pills.forEach((pill, i) => {
-    pill.style.animationDelay = `${i * 0.05}s`;
+  const glow = document.createElement('div');
+  glow.style.cssText = 'position:absolute;width:600px;height:600px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(79,143,255,0.07) 0%,transparent 70%);transform:translate(-50%,-50%);transition:left .4s ease,top .4s ease;z-index:0';
+  hero.style.position = 'relative';
+  hero.appendChild(glow);
+  hero.addEventListener('mousemove', e => {
+    const r = hero.getBoundingClientRect();
+    glow.style.left = (e.clientX - r.left) + 'px';
+    glow.style.top  = (e.clientY - r.top)  + 'px';
   });
 })();
 
-// ===== SMOOTH SECTION TRANSITIONS (Perspective Scroll) =====
+/* ============================================================
+   TYPEWRITER  — Hero name
+   ============================================================ */
 (function () {
-  const sections = document.querySelectorAll('.section');
-
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.style.opacity = '1';
-        entry.target.style.filter = 'blur(0px)';
-      } else {
-        const boundingRect = entry.boundingClientRect;
-        if (boundingRect.top > 0) {
-          entry.target.style.opacity = '0.3';
-          entry.target.style.filter = 'blur(2px)';
-        }
-      }
-    });
-  }, { threshold: 0.15 });
-
-  sections.forEach(section => {
-    section.style.transition = 'opacity 0.6s ease, filter 0.6s ease';
-    observer.observe(section);
-  });
-})();
-
-// ===== TYPEWRITER EFFECT FOR HERO NAME =====
-(function () {
-  const name = document.querySelector('.name-line.gradient-text');
-  if (!name) return;
-  const text = name.textContent;
-  name.textContent = '';
+  const el = document.getElementById('typed-name');
+  if (!el) return;
+  const txt = el.textContent;
+  el.textContent = '';
   let i = 0;
-
   setTimeout(() => {
-    const type = () => {
-      if (i < text.length) {
-        name.textContent += text[i];
-        i++;
-        setTimeout(type, 60);
-      }
-    };
-    type();
-  }, 600);
+    const t = setInterval(() => {
+      el.textContent += txt[i++];
+      if (i >= txt.length) clearInterval(t);
+    }, 65);
+  }, 700);
 })();
 
-console.log('%c⚡ Tharun Velamakuru | Portfolio', 'color: #3b82f6; font-size: 20px; font-weight: bold;');
-console.log('%cBuilding real apps that ship to production 🚀', 'color: #8b5cf6; font-size: 14px;');
-console.log('%cGitHub: https://github.com/Tharunk043', 'color: #06b6d4; font-size: 12px;');
+/* ============================================================
+   COUNTER ANIMATION  — Stats
+   ============================================================ */
+(function () {
+  const nums = document.querySelectorAll('.snum[data-target]');
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const el  = e.target;
+      const end = parseInt(el.dataset.target);
+      let cur = 0;
+      const step = Math.ceil(end / 30);
+      const t = setInterval(() => {
+        cur = Math.min(cur + step, end);
+        el.textContent = cur;
+        if (cur >= end) clearInterval(t);
+      }, 40);
+      io.unobserve(el);
+    });
+  }, { threshold: 0.5 });
+  nums.forEach(n => io.observe(n));
+})();
+
+/* ============================================================
+   3D TILT — Project cards
+   ============================================================ */
+(function () {
+  document.querySelectorAll('[data-tilt]').forEach(card => {
+    card.style.transformStyle = 'preserve-3d';
+    card.style.willChange = 'transform';
+
+    card.addEventListener('mousemove', e => {
+      const r  = card.getBoundingClientRect();
+      const rx = ((e.clientY - r.top)  / r.height - 0.5) * -10;
+      const ry = ((e.clientX - r.left) / r.width  - 0.5) *  10;
+      card.style.transform  = `translateY(-8px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.02)`;
+      card.style.transition = 'transform 0.08s ease';
+      card.style.boxShadow  = `${-ry/2}px ${rx/2}px 40px rgba(79,143,255,0.18)`;
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform  = 'translateY(0) rotateX(0) rotateY(0) scale(1)';
+      card.style.transition = 'transform 0.5s cubic-bezier(.23,1,.32,1)';
+      card.style.boxShadow  = '';
+    });
+  });
+})();
+
+/* ============================================================
+   PARALLAX — Hero photo on scroll
+   ============================================================ */
+(function () {
+  const right = document.getElementById('heroRight');
+  const badges = document.querySelectorAll('.tech-badge');
+  addEventListener('scroll', () => {
+    const s = scrollY;
+    if (right) right.style.transform = `translateY(${s * 0.18}px)`;
+    badges.forEach((b, i) => {
+      b.style.transform = `translateY(${s * (0.08 + i * 0.03)}px)`;
+    });
+  });
+})();
+
+/* ============================================================
+   PILL hover ripple
+   ============================================================ */
+(function () {
+  document.querySelectorAll('.pill').forEach((pill, i) => {
+    pill.style.transitionDelay = `${i * 0.03}s`;
+    pill.addEventListener('click', function (e) {
+      const ripple = document.createElement('span');
+      ripple.style.cssText = `position:absolute;width:8px;height:8px;background:rgba(79,143,255,.5);border-radius:50%;left:${e.offsetX-4}px;top:${e.offsetY-4}px;transform:scale(0);animation:ripple .4s ease forwards;pointer-events:none`;
+      this.style.position = 'relative';
+      this.style.overflow = 'hidden';
+      this.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 500);
+    });
+  });
+  const s = document.createElement('style');
+  s.textContent = '@keyframes ripple{to{transform:scale(20);opacity:0}}';
+  document.head.appendChild(s);
+})();
+
+/* ============================================================
+   CONTACT FORM
+   ============================================================ */
+(function () {
+  const form = document.getElementById('cform');
+  if (!form) return;
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const btn = form.querySelector('button');
+    btn.textContent = '✅ Sent!';
+    btn.style.background = 'linear-gradient(135deg,#10d98e,#059669)';
+    setTimeout(() => { btn.textContent = 'Send Message ✉️'; btn.style.background = ''; form.reset(); }, 3000);
+  });
+})();
+
+/* ============================================================
+   SMOOTH  active nav link style
+   ============================================================ */
+const activeStyle = document.createElement('style');
+activeStyle.textContent = '#nav ul a.active-link{color:#e8edf5}#nav ul a.active-link::after{width:100%}';
+document.head.appendChild(activeStyle);
+
+console.log('%c⚡ Tharun Velamakuru', 'color:#4f8fff;font-size:22px;font-weight:900');
+console.log('%cBuilding real apps that ship to production 🚀', 'color:#9b6bff;font-size:13px');
+console.log('%cGitHub → github.com/Tharunk043', 'color:#00eeff;font-size:12px');
